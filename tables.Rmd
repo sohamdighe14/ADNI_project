@@ -1,0 +1,86 @@
+---
+title: "ADNI Project"
+author: "Soham Dighe"
+date: '2022-09-26'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(MASS)
+library(ISLR)
+library(corrplot)
+library(glmnet)
+library(HRW)
+library(knitr)
+library(formatR)
+library(gam)
+library(splines)
+library(locfit)
+library(plot.matrix)
+library(png)
+library(tableone)
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 80), tidy = TRUE)
+```
+
+# Analysis of our datasets 
+
+## Checking if the difference in age is significant
+```{r}
+control = read.csv(file = '/Users/sohamdighe/Documents/SCIE90017/Data/ADNI/control.csv')
+diabetes = read.csv(file = '/Users/sohamdighe/Documents/SCIE90017/Data/ADNI/diabetes.csv')
+control$DX = as.factor(control$DX)
+control$APOE4 = as.factor(control$APOE4)
+control$ABETA = as.numeric(control$ABETA)
+control$PTGENDER = as.factor(control$PTGENDER)
+control$PTETHCAT = as.factor(control$PTETHCAT)
+control$PTRACCAT = as.factor(control$PTRACCAT)
+
+diabetes$DX = as.factor(diabetes$DX)
+diabetes$APOE4 = as.factor(diabetes$APOE4)
+diabetes$ABETA = as.numeric(diabetes$ABETA)
+diabetes$PTGENDER = as.factor(diabetes$PTGENDER)
+diabetes$PTETHCAT = as.factor(diabetes$PTETHCAT)
+diabetes$PTRACCAT = as.factor(diabetes$PTRACCAT)
+diabetes$PTAU = as.numeric(diabetes$PTAU)
+plot(y = control$AGE,x = control$DX,xlab = 'Diagnosis',ylab ='Age of patient')
+plot(y = diabetes$AGE,x = diabetes$DX,xlab = 'Diagnosis',ylab='Age of patient')
+```
+
+Checking normality of age through Shapiro-Wilk test
+```{r}
+shapiro.test(control$AGE)
+shapiro.test(diabetes$AGE)
+# trying to plot the data anyways
+qqnorm(control$AGE)
+qqline(control$AGE)
+qqnorm(diabetes$AGE)
+qqline(diabetes$AGE)
+```
+
+Now, we have established both are normally distributed so we will do t test on them.
+```{r}
+t.test(control$AGE,diabetes$AGE)
+```
+From the above test we reject the alternativce hypothesis and hence the true difference between means is zero and hence is not statistically significant.
+```{r,include=FALSE}
+writeLines(diabetes$PTID)
+writeLines(control$PTID)
+```
+\newpage
+
+## Table 1
+
+Here, we have a caveat. We still have not replaced missing data in the files so the values are not final but should give a decent estimate. FDG,PIB,FBB,AV45 and CSF markers are the ones with most null values. This is still to be addressed. 
+```{r,warning=FALSE}
+variables_selected = c('AGE','MMSE','CDRSB','FDG','PIB','AV45','PTGENDER','PTEDUCAT','PTETHCAT','PTRACCAT','APOE4','ABETA','PTAU','TAU','Ventricles','Hippocampus','mPACCdigit','mPACCtrailsB')
+control_tab <- CreateTableOne(vars = variables_selected,data = control,strata = "DX")
+control_tab
+diabetes_tab <- CreateTableOne(vars = variables_selected,data = diabetes,strata = "DX")
+diabetes_tab
+```
+
+```{r,warning=FALSE}
+cohort = rbind(control,diabetes)
+tab <- CreateTableOne(vars = variables_selected,data = cohort,strata = "DX")
+tab
+```
